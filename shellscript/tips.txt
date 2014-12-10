@@ -1,0 +1,24 @@
+
+
+$ sed '/3696/ s/$/running/' file.txt 
+foo1 3464 
+foo2 3696 running
+foo3 4562 
+
+or
+
+$ sed 's/3696/& running/' file.txt 
+foo1 3464 
+foo2 3696 running 
+foo3 4562 
+
+Add the -i option to save the changes back to file.txt.
+
+####################
+
+
+
+You can use the change command to replace the entire line, and the -i flag to make the changes in-place. For example:
+
+sed -i '/TEXT_TO_BE_REPLACED/c\This line is removed by the admin.' /tmp/foo
+

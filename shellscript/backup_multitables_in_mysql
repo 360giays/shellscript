@@ -1,0 +1,17 @@
+#!/bin/bash
+echo > /var/log/log_productrepo_tables.txt
+find /opt/sap/DataShare/Hlab/backupRepo/ -type -d -ctime +7 -exec rm -rf {} \;
+backup_date=$(date +"%y-%m-%d-%H-%M")
+backup_parent_folder="/opt/sap/DataShare/Hlab/backupRepo"
+backup_folder=${backup_parent_folder}/${backup_date}
+mkdir -p "$backup_folder"
+mysqluser="sa"
+mysqlpassword="mari123!"
+mysqldb="mariadb"
+DBS=$(/usr/bin/mysql -h us3sm2ccd01 -u $mysqluser -p$mysqlpassword -D $mysqldb -se "show tables")
+for table in $DBS
+do
+/usr/bin/mysqldump -h us3sm2ccd01  -u $mysqluser -p$mysqlpassword $mysqldb $table > "${backup_folder}/${table}.sql"
+echo "table : $table"$'\n' >> /var/log/log_productrepo_tables.txt
+done
+cat /var/log/log_productrepo_tables.txt | mail -s "Backup product Repo Database" operations.team.social.intelligence@sdl.com

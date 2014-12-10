@@ -1,0 +1,91 @@
+#!/bin/sh
+nagios_add="10.51.28.12"
+
+echo "Download nagios-plugin and nrpe"
+
+cd /usr/local/src
+wget http://garr.dl.sourceforge.net/project/nagios/nrpe-2.x/nrpe-2.15/nrpe-2.15.tar.gz
+wget http://nagios-plugins.org/download/nagios-plugins-2.0.3.tar.gz
+
+sleep 3
+
+echo "extract package"
+
+tar -zxvf nrpe-2.15.tar.gz
+
+sleep 3
+
+tar -zxvf nagios-plugins-2.0.3.tar.gz
+
+echo "Compile and install nagios plugin"
+sleep 3
+
+cd /usr/local/src/nagios-plugins-2.0.3
+./configure
+make
+make install
+
+echo "Finished compile and install nagios plugin"
+
+echo "==================================="
+
+###Check user nagios has existed.
+id -u nagios
+if [ $? == 0 ]; then
+echo "this user existed"
+else
+useradd nagios
+fi
+
+####Set permisssion for nagios folder and libexec
+chown nagios:nagios /usr/local/nagios
+chown -R nagios:nagios /usr/local/nagios/libexec
+
+###Check package has existed
+rpm -qa|grep openssl-devel
+if [ $? == 0 ]; then
+echo "this package existed"
+else
+yum -y install openssl-devel
+fi
+
+sleep 2
+
+###Check package has existed
+rpm -qa|grep xinetd
+if [ $? == 0 ]; then
+echo "this package existed"
+else
+yum -y install xinetd
+fi
+
+echo "========================================"
+
+echo "Compile and install nrpe"
+
+cd /usr/local/src/nrpe-2.15
+./configure
+make all
+make install-plugin
+make install-daemon
+make install-daemon-config
+make install-xinetd
+
+echo "Finished Compile and Install Nagios Plugin and NRPE"
+
+sleep 7
+
+echo "Now, Continue configure for nrpe"
+echo "Adding Nagios Server IP Address"
+
+sed -i '/#server_address=127.0.0.1/c\server_address=10.51.28.12' /usr/local/nagios/etc/nrpe.cfg
+sed -i '/allow_server=127.0.0.1/c\allow_server=10.51.28.12' /usr/local/nagios/etc/nrpe.cfg
+sed -i 's/127.0.0.1/& 10.51.28.12/' /etc/xinetd.d/nrpe
+
+echo "Adding port and nrpe service to /etc/services file"
+
+echo "nrpe            5666/tcp                # nrpe" >> /etc/services
+
+echo "Start nrpe deamon"
+/etc/init.d/xinetd start
+

@@ -1,0 +1,53 @@
+command[check_drivehealth]=/usr/local/nagios/libexec/check_drivehealth
+
+#!/bin/bash
+
+deadDrive=0
+for x in `omreport storage pdisk controller=0 | grep State | awk '{print $3}'`
+do
+if [ $x != "Online" ]; then
+        let deadDrive++
+fi
+done
+
+if [ $deadDrive -eq 0 ]; then
+        echo "All drives are online"
+        exit 0
+else
+        echo "There are $deadDrive dead drives!"
+        exit 2
+fi
+
+
+=======================
+command[check_elasticsearch]=/usr/local/nagios/libexec/check_elasticsearch
+
+
+#!/bin/bash
+
+service elasticsearch status
+
+
+
+if [ $? == 0 ]; then
+        exit 0
+else
+        exit 2
+fi
+
+
+================================
+
+define service{
+        use                     generic-service
+        host_name               us3sm2es010r07.comp.prod.local
+        service_description     Elastic Search Status
+        check_command           check_nrpe!check_elasticsearch
+        }
+		
+define service{
+        use                     generic-service
+        host_name               us3sm2es010r07.comp.prod.local
+        service_description     Drive Health
+        check_command           check_nrpe!check_drivehealth
+        }
